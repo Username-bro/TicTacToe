@@ -18,7 +18,7 @@ a fully working game of tic tac toe in c++ and raylib
 git clone https://github.com/your-username/MyProject.git
 cd MyProject
 ```
-### 2. Install raylib
+### 2. Install raylib (for windows) 
 ```bash
 vcpkg install raylib:x64-windows
 ```
