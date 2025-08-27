@@ -5,11 +5,33 @@ a fully working game of tic tac toe in c++ and raylib
 
 
 ## Requirements
-- [CMake](https://cmake.org/) >= 3.10
 - C++ compiler (MSVC, GCC, or Clang)
 - [vcpkg](https://github.com/microsoft/vcpkg) package manager
 
 ---
+## Installing vcpkg
+
+If you don’t already have [vcpkg](https://github.com/microsoft/vcpkg), install it with the following steps:
+
+```bash
+git clone https://github.com/microsoft/vcpkg.git
+```
+```bash
+cd vcpkg
+```
+
+# Windows
+```bash
+.\bootstrap-vcpkg.bat
+```
+```bash
+vcpkg integrate install
+```
+
+# macOS/Linux
+```bash
+./bootstrap-vcpkg.sh
+```
 
 ## Getting Started
 
