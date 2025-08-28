@@ -263,7 +263,7 @@ int main()
             DrawRectangle(0, 300, WIN_WIDTH, WIN_HEIGHT, BLACK);
             DrawText(((WinResult[0] == 5) ? "O" : "X"), 0, 300, 50, WHITE); DrawText("WiN!", 100, 300, 50, WHITE);
         }
-        if (checkDraw(board)) {
+        else if (checkDraw(board)) {
             DrawStateShow(GraphicalBoard);
             DrawRectangle(0, 300, WIN_WIDTH, WIN_HEIGHT, GRAY);
             DrawText("GAME IS ENDS in DRAW!", 0, 300, 50, WHITE);
