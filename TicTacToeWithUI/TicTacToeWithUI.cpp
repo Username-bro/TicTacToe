@@ -10,7 +10,7 @@ using namespace std;
 
 #define LOG(x) cout << x
 
-#define number_of_columns 3
+//#define number_of_columns 3
 
 
 
@@ -18,7 +18,6 @@ using namespace std;
 #define COLS 3
 
 char PlayerTurn;
-
 Vector2 MousePos;
 
 struct Cell {
@@ -31,19 +30,15 @@ struct Cell {
     Color CellColor = BLACK;
 
     const char* label = "";
-
-
     bool IsClecked = false;
 
 
 public:
     Cell(int xpos, int ypos, int wid, int hei, const pair<int, int>& position) : x(xpos), y(ypos), width(wid), height(hei), InVirtualBoardPosition(position) {}
 
-    bool HoveredOn() {
+    bool IsHoveredOn() {
         if ((MousePos.x >= x) && (MousePos.x <= x + width)) {
-            if ((MousePos.y >= y) && (MousePos.y <= y + height)) {
-                return true;
-            }
+            if ((MousePos.y >= y) && (MousePos.y <= y + height)) return true;
         }
         return false;
     }
@@ -52,7 +47,7 @@ public:
         DrawRectangle(x, y, width, height, CellColor);
         DrawText(label, (x + width / 2) - (width / 3), (y + height / 2) - (width / 2), width, RAYWHITE); //the most hard coded thing i have ever coded (: 
 
-        if (HoveredOn()) {
+        if (IsHoveredOn()) {
             CellColor = GRAY;
             if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
                 IsClecked = true;
@@ -86,6 +81,8 @@ struct UIBoard {
     static vector<Cell> box;
 };
 
+
+// xpos , ypos , width , height , pair ( virtuatBoard_xpos , virtuatBoard_ypos) 
 vector<Cell> UIBoard::box = {
     {50, 50, 50, 50, {0, 0} },
     {120, 50, 50, 50, {0,1} },
@@ -100,13 +97,13 @@ vector<Cell> UIBoard::box = {
     {190, 190, 50, 50, {2,2} },
 };
 
-void DisplayUIBoard(UIBoard& board) {
+void DisplayBoardToScreen(UIBoard& board) {
     for (Cell& cell : board.box) {
         cell.show();
     }
 }
 
-void ApplyMoveOnBoard(Board& board, Cell& cell) {
+void ApplyMoveOnVirtualBoard(Board& board, Cell& cell) {
     board.board_buffer[cell.InVirtualBoardPosition.first][cell.InVirtualBoardPosition.second] = cell.Input;
 }
 
@@ -135,7 +132,7 @@ void CleckBoxTOInput(UIBoard& board, Board& vBoard) {
             }
 
             if (checkValideMove(vBoard, cell)) {
-                ApplyMoveOnBoard(vBoard, cell);
+                ApplyMoveOnVirtualBoard(vBoard, cell);
             }
         }
 
@@ -143,7 +140,7 @@ void CleckBoxTOInput(UIBoard& board, Board& vBoard) {
 }
 
 
-void displayBoard(const Board& board) {
+void DisplayVirtualBoardTOConsole(const Board& board) {
     for (size_t i = 0; i < ROWS; ++i) {
         for (size_t j = 0; j < COLS; ++j) {
             LOG(board.board_buffer[i][j]); LOG(' ');
@@ -155,35 +152,55 @@ void displayBoard(const Board& board) {
 
 
 
+enum WinState {
+    ROW,
+    COL,
+    DIGONNAL,
+    ANTIDIGONAL,
+    NON
+};
 
 
-char checkWin(const Board& board) {
+
+
+
+//return { char , winState, COL}
+// { 5 = 'O' , 10 = 'X' } 
+
+vector<int> checkWin(const Board& board) {
 #define arr board.board_buffer
 
     //rows (-)
     for (int r = 0; r < 3; ++r) {
         if (arr[r][0] != '0') {
-            if (arr[r][0] == arr[r][1] && arr[r][1] == arr[r][2]) return arr[r][0];
+            if (arr[r][0] == arr[r][1] && arr[r][1] == arr[r][2]) return { (arr[r][0] == 'X' ) ? 10 : 5 ,WinState::ROW , r };
         }
     }
 
     // columns (|)
     for (int c = 0; c < 3; ++c)
         if (arr[0][c] != '0' && arr[0][c] == arr[1][c] && arr[1][c] == arr[2][c])
-            return arr[0][c];
+            return { (arr[0][c] == 'X') ? 10 : 5, WinState::COL, c };
 
     //diagonals (\)
     if (arr[0][0] != '0' && arr[0][0] == arr[1][1] && arr[1][1] == arr[2][2])
-        return arr[0][0];
+        return { (arr[0][0] == 'X') ? 10 : 5, WinState::DIGONNAL, 0 }; 
 
     //diagonals (/)
     if (arr[0][2] != '0' && arr[0][2] == arr[1][1] && arr[1][1] == arr[2][0])
-        return arr[0][2];
+        return { (arr[0][2] == 'X') ? 10 : 5, WinState::ANTIDIGONAL, 0 };
 
-    return '0';
+    return {0, WinState::NON, 0 };
 }
 
 
+
+
+void DrawStateShow(UIBoard& board) {
+    for (auto& a : board.box) {
+        a.CellColor = GRAY; 
+    }
+}
 bool checkDraw(const Board& board) {
     for (int i = 0; i < ROWS; ++i) {
         for (int j = 0; j < COLS; ++j) {
@@ -209,26 +226,56 @@ int main()
     UIBoard GraphicalBoard;
 
 
-    //displayBoard(board);
+    //DisplayVirtualBoardTOConsole(board);
     InitWindow(WIN_WIDTH, WIN_HEIGHT, "tic tac toe");
     while (!WindowShouldClose()) {
         MousePos = GetMousePosition();
         BeginDrawing();
-        if (checkWin(board) != '0') {
+        vector<int> WinResult = checkWin(board); 
+        if (WinResult[0] != 0) {
+            if (WinResult[1] == WinState::ROW) {
+                switch (WinResult[2]) {
+                case 0: GraphicalBoard.box[0].CellColor = GREEN; GraphicalBoard.box[1].CellColor = GREEN; GraphicalBoard.box[2].CellColor = GREEN;
+                    break;
+                case 1: GraphicalBoard.box[3].CellColor = GREEN; GraphicalBoard.box[4].CellColor = GREEN; GraphicalBoard.box[5].CellColor = GREEN;
+                    break;
+                case 2:GraphicalBoard.box[6].CellColor = GREEN; GraphicalBoard.box[7].CellColor = GREEN; GraphicalBoard.box[8].CellColor = GREEN;
+                    break;
+                }
+            }
+            else if (WinResult[1] == WinState::COL) {
+                switch (WinResult[2]) {
+                case 0: GraphicalBoard.box[0].CellColor = GREEN; GraphicalBoard.box[3].CellColor = GREEN; GraphicalBoard.box[6].CellColor = GREEN;
+                    break;
+                case 1: GraphicalBoard.box[1].CellColor = GREEN; GraphicalBoard.box[4].CellColor = GREEN; GraphicalBoard.box[7].CellColor = GREEN;
+                    break;
+                case 2:GraphicalBoard.box[2].CellColor = GREEN; GraphicalBoard.box[5].CellColor = GREEN; GraphicalBoard.box[8].CellColor = GREEN;
+                    break;
+                }
+            }
+            else if (WinResult[1] == WinState::DIGONNAL) {
+                GraphicalBoard.box[0].CellColor = GREEN; GraphicalBoard.box[4].CellColor = GREEN; GraphicalBoard.box[8].CellColor = GREEN;
+            }
+            else if (WinResult[1] == WinState::ANTIDIGONAL) {
+                GraphicalBoard.box[2].CellColor = GREEN; GraphicalBoard.box[4].CellColor = GREEN; GraphicalBoard.box[6].CellColor = GREEN;
+            }
+
             DrawRectangle(0, 300, WIN_WIDTH, WIN_HEIGHT, BLACK);
-            DrawText("YOU WiN!", 0, 300, 50, WHITE);
+            DrawText(((WinResult[0] == 5) ? "O" : "X"), 0, 300, 50, WHITE); DrawText("WiN!", 100, 300, 50, WHITE);
         }
         if (checkDraw(board)) {
+            DrawStateShow(GraphicalBoard);
             DrawRectangle(0, 300, WIN_WIDTH, WIN_HEIGHT, GRAY);
             DrawText("GAME IS ENDS in DRAW!", 0, 300, 50, WHITE);
         }
         ClearBackground(WHITE);
-        DisplayUIBoard(GraphicalBoard);
+        DisplayBoardToScreen(GraphicalBoard);
         CleckBoxTOInput(GraphicalBoard, board);
 
         EndDrawing();
     }
 
-    displayBoard(board);
-    //CloseWindow();
+    DisplayVirtualBoardTOConsole(board);
+    CloseWindow();
 }
+
